@@ -25,6 +25,37 @@ export const Marks = {
     return { id: result.lastInsertRowid, ...markData };
   },
 
+  createBatch: (marksArray) => {
+    const db = getDb();
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO marks (user_id, name, sem, batch_id, branch_id, subject_code, subject_name, internal, external, total, result, announced_date, attempts, original_sem)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const insertMany = db.transaction((marks) => {
+      for (const markData of marks) {
+        stmt.run(
+          markData.user_id,
+          markData.name,
+          markData.sem,
+          markData.batch_id,
+          markData.branch_id,
+          markData.subject_code,
+          markData.subject_name || '',
+          markData.internal,
+          markData.external,
+          markData.total,
+          markData.result,
+          markData.announced_date || '',
+          markData.attempts || 1,
+          markData.original_sem || null
+        );
+      }
+    });
+    
+    insertMany(marksArray);
+  },
+
   findSubjectByUser: (userId, subjectCode) => {
     const db = getDb();
     return db.prepare(`

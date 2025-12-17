@@ -1,17 +1,16 @@
-import { Marks, Document } from '../models/MarksPg.js';
-import { Branch, Batch, Student } from '../models/UserPg.js';
-import { query } from '../database/pg.js';
+import { Marks, Document } from '../models/Marks.js';
+import { Branch, Batch, Student } from '../models/User.js';
+import { getDb } from '../database/init.js';
 
 export const getDashboard = async (req, res) => {
   try {
-    const branches = await Branch.getAll();
+    const branches = Branch.getAll();
+    const db = getDb();
     
     const branchStats = {};
     for (const branch of branches) {
-      const result = await query(`
-        SELECT COUNT(*) as count FROM students WHERE branch_id = $1
-      `, [branch.id]);
-      branchStats[branch.branch] = parseInt(result.rows[0].count);
+      const result = db.prepare('SELECT COUNT(*) as count FROM students WHERE branch_id = ?').get(branch.id);
+      branchStats[branch.branch] = parseInt(result.count);
     }
 
     res.json({
@@ -27,15 +26,13 @@ export const getDashboard = async (req, res) => {
 export const getBatchesByBranch = async (req, res) => {
   try {
     const { branchId } = req.params;
-    const batches = await Batch.getAll();
+    const batches = Batch.getAll();
+    const db = getDb();
 
     const batchStats = {};
     for (const batch of batches) {
-      const result = await query(`
-        SELECT COUNT(*) as count FROM students 
-        WHERE batch_id = $1 AND branch_id = $2
-      `, [batch.id, branchId]);
-      batchStats[batch.batch] = parseInt(result.rows[0].count);
+      const result = db.prepare('SELECT COUNT(*) as count FROM students WHERE batch_id = ? AND branch_id = ?').get(batch.id, branchId);
+      batchStats[batch.batch] = parseInt(result.count);
     }
 
     res.json({
@@ -52,23 +49,21 @@ export const getBatchesByBranch = async (req, res) => {
 export const getSemestersByBranchBatch = async (req, res) => {
   try {
     const { branchId, batchId } = req.params;
-    const semesters = await Marks.getSemestersByBranchBatch(branchId, batchId);
+    const semesters = Marks.getSemestersByBranchBatch(branchId, batchId);
+    const db = getDb();
     
-    const totalStudentsResult = await query(`
-      SELECT COUNT(*) as count FROM students 
-      WHERE batch_id = $1 AND branch_id = $2
-    `, [batchId, branchId]);
+    const totalStudentsResult = db.prepare('SELECT COUNT(*) as count FROM students WHERE batch_id = ? AND branch_id = ?').get(batchId, branchId);
 
     const semesterStats = {};
     for (const s of semesters) {
-      const count = await Document.countByBranchBatchSem(branchId, batchId, s.sem);
+      const count = Document.countByBranchBatchSem(branchId, batchId, s.sem);
       semesterStats[s.sem] = parseInt(count.count);
     }
 
     res.json({
       semesters: semesters.map(s => s.sem),
       semesterStats,
-      totalStudents: parseInt(totalStudentsResult.rows[0].count),
+      totalStudents: parseInt(totalStudentsResult.count),
       branchId: parseInt(branchId),
       batchId: parseInt(batchId)
     });
@@ -81,10 +76,10 @@ export const getSemestersByBranchBatch = async (req, res) => {
 export const getResultAnalytics = async (req, res) => {
   try {
     const { branchId, batchId, sem } = req.params;
-    const analytics = await Marks.getAnalytics(branchId, batchId, sem);
+    const analytics = Marks.getAnalytics(branchId, batchId, sem);
     
-    const branch = await Branch.findById(branchId);
-    const batch = await Batch.findById(batchId);
+    const branch = Branch.findById(branchId);
+    const batch = Batch.findById(batchId);
 
     res.json({
       ...analytics,
@@ -101,10 +96,10 @@ export const getResultAnalytics = async (req, res) => {
 export const downloadReport = async (req, res) => {
   try {
     const { branchId, batchId, sem } = req.params;
-    const analytics = await Marks.getAnalytics(branchId, batchId, sem);
+    const analytics = Marks.getAnalytics(branchId, batchId, sem);
     
-    const branch = await Branch.findById(branchId);
-    const batch = await Batch.findById(batchId);
+    const branch = Branch.findById(branchId);
+    const batch = Batch.findById(batchId);
 
     res.json({
       ...analytics,
@@ -126,12 +121,13 @@ export const addBranch = async (req, res) => {
       return res.status(400).json({ error: 'Branch name is required' });
     }
 
-    const existing = await query('SELECT id FROM branches WHERE branch = $1', [branch]);
-    if (existing.rows.length > 0) {
+    const db = getDb();
+    const existing = db.prepare('SELECT id FROM branches WHERE branch = ?').get(branch);
+    if (existing) {
       return res.status(400).json({ error: 'Branch already exists' });
     }
 
-    const result = await Branch.create(branch);
+    const result = Branch.create(branch);
     res.status(201).json({ message: 'Branch added successfully', branch: result });
   } catch (error) {
     console.error('Add branch error:', error);
@@ -146,12 +142,13 @@ export const addBatch = async (req, res) => {
       return res.status(400).json({ error: 'Batch year is required' });
     }
 
-    const existing = await query('SELECT id FROM batches WHERE batch = $1', [batch]);
-    if (existing.rows.length > 0) {
+    const db = getDb();
+    const existing = db.prepare('SELECT id FROM batches WHERE batch = ?').get(batch);
+    if (existing) {
       return res.status(400).json({ error: 'Batch already exists' });
     }
 
-    const result = await Batch.create(parseInt(batch));
+    const result = Batch.create(parseInt(batch));
     res.status(201).json({ message: 'Batch added successfully', batch: result });
   } catch (error) {
     console.error('Add batch error:', error);

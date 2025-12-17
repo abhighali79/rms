@@ -1,5 +1,6 @@
-import { Marks, Document, UploadJob } from '../models/MarksPg.js';
-import { Student, User } from '../models/UserPg.js';
+import { Marks, Document } from '../models/Marks.js';
+import { Student, User } from '../models/User.js';
+import { getDb } from '../database/init.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
@@ -86,13 +87,13 @@ const processUpload = async (userId, filePath, student) => {
   const marksToCreate = [];
 
   for (const item of lineItems) {
-    const existingRecord = await Marks.findSubjectByUser(userId, item.subject_code);
+    const existingRecord = Marks.findSubjectByUser(userId, item.subject_code);
     
     if (existingRecord && existingRecord.sem < sem) {
       const newAttempts = (existingRecord.attempts || 1) + 1;
       
       if (item.result === 'P') {
-        await Marks.updateBacklogCleared(existingRecord.id, {
+        Marks.updateBacklogCleared(existingRecord.id, {
           internal: item.internal,
           external: item.external,
           total: item.total,
@@ -101,7 +102,7 @@ const processUpload = async (userId, filePath, student) => {
         });
         backlogsClearedCount++;
       } else {
-        await Marks.updateAttemptCount(existingRecord.id, newAttempts);
+        Marks.updateAttemptCount(existingRecord.id, newAttempts);
       }
     } else if (!existingRecord || existingRecord.sem === sem) {
       marksToCreate.push({
@@ -124,10 +125,10 @@ const processUpload = async (userId, filePath, student) => {
   }
 
   if (marksToCreate.length > 0) {
-    await Marks.createBatch(marksToCreate);
+    Marks.createBatch(marksToCreate);
   }
 
-  await Document.create({
+  Document.create({
     user_id: userId,
     sem,
     branch_id: student.branch_id,
@@ -156,7 +157,7 @@ export const uploadResult = async (req, res) => {
       return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
     }
 
-    const student = await Student.findByUserId(req.user.id);
+    const student = Student.findByUserId(req.user.id);
     if (!student) {
       return res.status(400).json({ error: 'Student profile not found' });
     }
@@ -186,8 +187,8 @@ export const uploadResult = async (req, res) => {
 
 export const getMyMarks = async (req, res) => {
   try {
-    const marks = await Marks.findByUser(req.user.id);
-    const semesters = await Marks.getSemestersByUser(req.user.id);
+    const marks = Marks.findByUser(req.user.id);
+    const semesters = Marks.getSemestersByUser(req.user.id);
 
     const semesterPercentages = {};
     semesters.forEach(s => {
@@ -212,7 +213,7 @@ export const getMyMarks = async (req, res) => {
 
 export const getMyDocuments = async (req, res) => {
   try {
-    const documents = await Document.findByUser(req.user.id);
+    const documents = Document.findByUser(req.user.id);
     res.json(documents);
   } catch (error) {
     console.error('Get documents error:', error);
@@ -222,7 +223,8 @@ export const getMyDocuments = async (req, res) => {
 
 export const getUploadStatus = async (req, res) => {
   try {
-    const jobs = await UploadJob.findByUser(req.user.id);
+    const db = getDb();
+    const jobs = db.prepare('SELECT * FROM upload_jobs WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
     res.json(jobs);
   } catch (error) {
     console.error('Get upload status error:', error);

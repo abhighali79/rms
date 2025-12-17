@@ -6,15 +6,15 @@ A modern MERN-style academic result management platform. Students can upload res
 ## Tech Stack
 - **Frontend**: React 18 + Vite + Tailwind CSS
 - **Backend**: Node.js + Express.js
-- **Database**: PostgreSQL (with connection pooling)
+- **Database**: SQLite (using better-sqlite3)
 - **Authentication**: JWT + bcryptjs
 
 ## Project Structure
 ```
 /backend
 ├── server.js           # Express server (port 3001)
-├── database/pg.js      # PostgreSQL connection & schema
-├── models/             # UserPg.js, MarksPg.js
+├── database/init.js    # SQLite connection & schema
+├── models/             # User.js, Marks.js
 ├── controllers/        # auth, student, professor, admin
 ├── routes/             # RESTful API endpoints
 ├── middleware/         # JWT authentication
@@ -33,7 +33,7 @@ A modern MERN-style academic result management platform. Students can upload res
 
 ## Running the Application
 The app runs with two workflows:
-- **Backend Server**: `cd backend && npm start` (port 3001)
+- **Backend Server**: `cd backend && npm run dev` (port 3001)
 - **Frontend**: `cd frontend && npm run dev` (port 5000)
 
 ## Default Credentials
@@ -50,12 +50,11 @@ The app runs with two workflows:
 - Subject-wise pass/fail analysis
 - CSV export functionality
 
-## Optimizations for Scale (1000+ students)
-- **PostgreSQL Database** with connection pooling (max 20 connections)
-- **Database indexes** on frequently queried columns
+## Optimizations
+- **SQLite Database** with WAL mode for better performance
 - **Rate limiting** - 100 requests/15min general, 10 uploads/min per user
 - **Compression middleware** for faster response times
-- **Batch database inserts** for marks
+- **Batch database inserts** for marks using transactions
 - **Async file operations** for PDF processing
 - **Upload progress tracking** in frontend
 - **Skeleton loading states** for better UX
@@ -70,5 +69,7 @@ The app runs with two workflows:
 - `GET /api/professor/analytics/:branchId/:batchId/:sem` - Result analytics
 
 ## Environment Variables
-- `DATABASE_URL` - PostgreSQL connection string
 - `JWT_SECRET` - Secret for JWT token signing
+
+## Recent Changes
+- **Dec 2024**: Switched from PostgreSQL to SQLite database for simpler deployment and self-contained storage

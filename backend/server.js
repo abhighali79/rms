@@ -11,7 +11,7 @@ import authRoutes from './routes/auth.js';
 import studentRoutes from './routes/student.js';
 import professorRoutes from './routes/professor.js';
 import adminRoutes from './routes/admin.js';
-import { initDatabase } from './database/pg.js';
+import { initDatabase } from './database/init.js';
 
 dotenv.config();
 
@@ -53,14 +53,12 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-(async () => {
-  try {
-    await initDatabase();
-  } catch (err) {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
-  }
-})();
+try {
+  initDatabase();
+} catch (err) {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
@@ -68,7 +66,7 @@ app.use('/api/professor', professorRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running', database: 'PostgreSQL' });
+  res.json({ status: 'ok', message: 'Server is running', database: 'SQLite' });
 });
 
 const frontendDistPath = path.join(__dirname, '../frontend/dist');

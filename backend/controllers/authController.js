@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { User, Student, Professor, Branch, Batch } from '../models/UserPg.js';
+import { User, Student, Professor, Branch, Batch } from '../models/User.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -12,12 +12,12 @@ export const registerStudent = async (req, res) => {
       return res.status(400).json({ error: 'USN, password, batch and branch are required' });
     }
 
-    const existingUser = await User.findByUsername(usn);
+    const existingUser = User.findByUsername(usn);
     if (existingUser) {
       return res.status(400).json({ error: 'USN already registered' });
     }
 
-    const user = await User.create({
+    const user = User.create({
       username: usn,
       email,
       password,
@@ -27,7 +27,7 @@ export const registerStudent = async (req, res) => {
       is_professor: false
     });
 
-    await Student.create({
+    Student.create({
       user_id: user.id,
       usn,
       batch_id,
@@ -52,12 +52,12 @@ export const registerProfessor = async (req, res) => {
       return res.status(400).json({ error: 'Employee ID and password are required' });
     }
 
-    const existingUser = await User.findByUsername(empid);
+    const existingUser = User.findByUsername(empid);
     if (existingUser) {
       return res.status(400).json({ error: 'Employee ID already registered' });
     }
 
-    const user = await User.create({
+    const user = User.create({
       username: empid,
       email,
       password,
@@ -67,7 +67,7 @@ export const registerProfessor = async (req, res) => {
       is_professor: true
     });
 
-    await Professor.create({
+    Professor.create({
       user_id: user.id,
       empid,
       department_id,
@@ -91,7 +91,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    const user = await User.findByUsername(username);
+    const user = User.findByUsername(username);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -122,9 +122,9 @@ export const login = async (req, res) => {
 
     let profile = null;
     if (user.is_student) {
-      profile = await Student.findByUserId(user.id);
+      profile = Student.findByUserId(user.id);
     } else if (user.is_professor) {
-      profile = await Professor.findByUserId(user.id);
+      profile = Professor.findByUserId(user.id);
     }
 
     res.json({
@@ -149,16 +149,16 @@ export const login = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     let profile = null;
     if (user.is_student) {
-      profile = await Student.findByUserId(user.id);
+      profile = Student.findByUserId(user.id);
     } else if (user.is_professor) {
-      profile = await Professor.findByUserId(user.id);
+      profile = Professor.findByUserId(user.id);
     }
 
     res.json({
@@ -180,7 +180,7 @@ export const getProfile = async (req, res) => {
 
 export const getBranches = async (req, res) => {
   try {
-    const branches = await Branch.getAll();
+    const branches = Branch.getAll();
     res.json(branches);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get branches' });
@@ -189,7 +189,7 @@ export const getBranches = async (req, res) => {
 
 export const getBatches = async (req, res) => {
   try {
-    const batches = await Batch.getAll();
+    const batches = Batch.getAll();
     res.json(batches);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get batches' });

@@ -108,6 +108,17 @@ export function initDatabase() {
       FOREIGN KEY (branch_id) REFERENCES branches(id),
       UNIQUE(user_id, subject_code, sem)
     );
+
+    CREATE TABLE IF NOT EXISTS upload_jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      file_path TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      result_message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 
   const adminExists = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
