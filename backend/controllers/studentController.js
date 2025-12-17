@@ -82,6 +82,10 @@ const processUpload = async (userId, filePath, student) => {
 
   const { header, lineItems } = parseResultText(textContent);
 
+  console.log('Parsed header:', header);
+  console.log('Parsed lineItems count:', lineItems.length);
+  console.log('Line items:', JSON.stringify(lineItems, null, 2));
+
   if (!header.usn || header.usn !== student.usn) {
     fs.unlinkSync(filePath);
     if (fs.existsSync(txtPath)) fs.unlinkSync(txtPath);
