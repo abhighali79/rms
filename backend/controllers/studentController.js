@@ -29,26 +29,33 @@ const parseResultText = (text) => {
   for (const line of lines) {
     const parts = line.trim().split(/\s+/);
     
-    if (parts.length >= 6 && /^\d{2}[A-Z]/.test(parts[0])) {
-      const subjectCode = parts[0];
+    if (parts.length >= 6) {
+      const firstPart = parts[0];
       
-      const subjectName = parts.slice(1, -5).join(' ');
-      const internal = parts[parts.length - 5];
-      const external = parts[parts.length - 4];
-      const total = parts[parts.length - 3];
-      const result = parts[parts.length - 2];
-      const announcedDate = parts[parts.length - 1];
+      const isOldScheme = /^\d{2}[A-Z]/.test(firstPart);
+      const isNewScheme = /^[A-Z]{2,5}\d{3}[A-Z]?$/i.test(firstPart);
       
-      if (/^\d+$/.test(internal) && /^\d+$/.test(external) && /^\d+$/.test(total)) {
-        lineItems.push({
-          subject_code: subjectCode,
-          subject_name: subjectName,
-          internal: internal,
-          external: external,
-          total: total,
-          result: result.toUpperCase(),
-          announced_date: announcedDate
-        });
+      if (isOldScheme || isNewScheme) {
+        const subjectCode = firstPart;
+        
+        const subjectName = parts.slice(1, -5).join(' ');
+        const internal = parts[parts.length - 5];
+        const external = parts[parts.length - 4];
+        const total = parts[parts.length - 3];
+        const result = parts[parts.length - 2];
+        const announcedDate = parts[parts.length - 1];
+        
+        if (/^\d+$/.test(internal) && /^\d+$/.test(external) && /^\d+$/.test(total)) {
+          lineItems.push({
+            subject_code: subjectCode,
+            subject_name: subjectName,
+            internal: internal,
+            external: external,
+            total: total,
+            result: result.toUpperCase(),
+            announced_date: announcedDate
+          });
+        }
       }
     }
   }
