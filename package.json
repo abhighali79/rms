@@ -1,0 +1,17 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "The **Result Management System (RMS)** is a comprehensive platform designed to automate and simplify the process of academic result handling. It enables **students** to upload their result PDFs, which are processed using **OCR (Optical Character Recognition)** to extract and structure data automatically. The extracted data is securely stored in a database, allowing **professors** to view analytics, such as **passing rates**, **topper lists**, and **downloadable Excel reports**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "compression": "^1.8.1",
+    "express-rate-limit": "^8.2.1",
+    "pg": "^8.16.3"
+  }
+}
